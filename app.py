@@ -5,13 +5,20 @@ from plotly.subplots import make_subplots
 # 1. إعدادات الصفحة والهوية البصرية
 st.set_page_config(page_title="H-SIM Digital Lab", layout="wide", initial_sidebar_state="expanded")
 
-# تخصيص المظهر عبر CSS بسيط
+# تخصيص المظهر عبر CSS (تم تصحيح الخطأ هنا)
 st.markdown("""
     <style>
     .main { background-color: #fdfdfd; }
-    .stMetric { background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .stMetric { 
+        background-color: #ffffff; 
+        padding: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+    }
+    /* تحسين الخطوط والعناوين */
+    h1, h2, h3 { color: #1a237e; font-family: 'Arial'; }
     </style>
-    """, unsafe_allow_type=True)
+    """, unsafe_allow_html=True) # تم تصحيح unsafe_allow_type إلى unsafe_allow_html
 
 # 2. نظام التبويبات (Navigation)
 tabs = st.tabs(["🏠 فلسفة إطار الهائل", "📊 لوحة المؤشرات الذكية (H-SIM)"])
@@ -42,7 +49,7 @@ with tabs[0]:
     
     with col2:
         st.info("**مبدأ الهائل:** التكامل ليس خياراً، بل هو قانون البقاء في عصر التحول الرقمي.")
-        # 
+        # يمكن هنا إضافة صورة شعار الإطار لاحقاً
     
     st.success("👈 انتقل الآن إلى تبويب 'لوحة المؤشرات الذكية' للبدء في تشخيص منظمتك.")
 
@@ -52,6 +59,8 @@ with tabs[1]:
     
     # القائمة الجانبية (Sidebar) للمدخلات
     st.sidebar.header("📥 إدخال قيم الجسور (1-10)")
+    st.sidebar.markdown("قم بتحريك المؤشرات بناءً على نتائج الاستبيان الميداني")
+    
     v_a = st.sidebar.slider("V -> A (التنفيذ)", 0.0, 10.0, 1.95)
     a_v = st.sidebar.slider("A -> V (التميز)", 0.0, 10.0, 2.13)
     r_a = st.sidebar.slider("R -> A (الاستدامة)", 0.0, 10.0, 1.05)
@@ -59,12 +68,13 @@ with tabs[1]:
     s_v = st.sidebar.slider("S -> V (الملاءمة)", 0.0, 10.0, 4.47)
     v_s = st.sidebar.slider("V -> S (التأثير)", 0.0, 10.0, 3.50)
 
-    # حساب المؤشرات
+    # حساب المؤشرات بناءً على معادلات إطار الهائل
     eri = (v_a + a_v) / 2
     vci = (s_v + a_r) / 2
     ssi = (r_a + v_s) / 2
     iii = (v_a + r_a + a_v + s_v) / 4
 
+    # تنظيم البيانات لعرضها في العدادات
     indicators = [
         {"label": "جاهزية التنفيذ (ERI)", "value": eri, "info": "شلل تنفيذي" if eri < 3 else "آلية فعالة"},
         {"label": "اتساق القيمة (VCI)", "value": vci, "info": "هدر تشغيلي" if vci < 4 else "قيمة متسقة"},
@@ -72,16 +82,41 @@ with tabs[1]:
         {"label": "التكامل الداخلي (III)", "value": iii, "info": "قطيعة تنظيمية" if iii < 3 else "تكامل هيكلي"}
     ]
 
-    # رسم العدادات
-    fig = make_subplots(rows=2, cols=2, specs=[[{'type': 'indicator'}]*2]*2, vertical_spacing=0.15)
+    # رسم العدادات (Gauges)
+    fig = make_subplots(
+        rows=2, cols=2, 
+        specs=[[{'type': 'indicator'}]*2]*2, 
+        vertical_spacing=0.2,
+        horizontal_spacing=0.1
+    )
+
     for i, ind in enumerate(indicators):
         row, col = (i // 2) + 1, (i % 2) + 1
         fig.add_trace(go.Indicator(
-            mode = "gauge+number", value = ind["value"],
+            mode = "gauge+number", 
+            value = ind["value"],
             title = {'text': f"<b>{ind['label']}</b><br><span style='font-size:0.8em;color:gray'>{ind['info']}</span>"},
-            gauge = {'axis': {'range': [0, 10]}, 'bar': {'color': "black"},
-                     'steps': [{'range': [0, 3], 'color': "#ff4d4d"}, {'range': [3, 6], 'color': "#ffa64d"}, {'range': [6, 10], 'color': "#4dff4d"}]}
+            gauge = {
+                'axis': {'range': [0, 10]}, 
+                'bar': {'color': "#1a237e"},
+                'steps': [
+                    {'range': [0, 3], 'color': "#ff4d4d"}, 
+                    {'range': [3, 6], 'color': "#ffa64d"}, 
+                    {'range': [6, 10], 'color': "#4dff4d"}
+                ]
+            }
         ), row=row, col=col)
     
-    fig.update_layout(height=600, margin=dict(t=50, b=50))
+    fig.update_layout(height=700, margin=dict(t=100, b=50, l=50, r=50))
     st.plotly_chart(fig, use_container_width=True)
+
+    # إضافة ملخص تشخيصي في الأسفل
+    st.markdown("---")
+    st.subheader("📝 الملخص التشخيصي السريع")
+    avg_score = (eri + vci + ssi + iii) / 4
+    if avg_score < 4:
+        st.error(f"مؤشر الهائل الكلي: {avg_score:.2f} - المنظمة في مرحلة 'النزيف الاستراتيجي'. مطلوب تدخل فوري لإعادة بناء الجسور.")
+    elif avg_score < 7:
+        st.warning(f"مؤشر الهائل الكلي: {avg_score:.2f} - المنظمة في مرحلة 'الهشاشة'. التكامل يحتاج إلى مأسسة.")
+    else:
+        st.success(f"مؤشر الهائل الكلي: {avg_score:.2f} - المنظمة في حالة 'تكامل صحي'.")
